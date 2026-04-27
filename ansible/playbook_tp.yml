@@ -1,28 +1,31 @@
 ---
-- name: Configuration des interfaces
+- name: Playbook TP Complet - Interfaces et DHCP
   hosts: routeurs
   gather_facts: no
 
   tasks:
-    # 1. Configuration des adresses IP (l3)
-    - name: Configuration des adresses IP sur les interfaces
+    # --- PARTIE 1 : INTERFACES ---
+    - name: Configuration IP GigabitEthernet2
       cisco.ios.ios_config:
-        config:
-          - name: GigabitEthernet1
-            ipv4:
-              - address: dhcp
-          - name: GigabitEthernet2
-            ipv4:
-              - address: 192.168.2.1/24
-          - name: GigabitEthernet3
-            ipv4:
-              - address: 192.168.3.1/24
-          - name: GigabitEthernet4
-            ipv4:
-              - address: 192.168.4.1/24
-      
+        lines:
+          - ip address 192.168.2.1 255.255.255.0
+          - no shutdown
+        parents: interface GigabitEthernet2
 
-    # 2. Ajout des descriptions et activation (l2)
+    - name: Configuration IP GigabitEthernet3
+      cisco.ios.ios_config:
+        lines:
+          - ip address 192.168.3.1 255.255.255.0
+          - no shutdown
+        parents: interface GigabitEthernet3
+
+    - name: Configuration IP GigabitEthernet4
+      cisco.ios.ios_config:
+        lines:
+          - ip address 192.168.4.1 255.255.255.0
+          - no shutdown
+        parents: interface GigabitEthernet4
+
     - name: Activation et descriptions des interfaces
       cisco.ios.ios_interfaces:
         config:
@@ -38,4 +41,25 @@
           - name: GigabitEthernet4
             description: LAN_ADMIN
             enabled: true
-     
+        state: merged
+
+    # --- PARTIE 2 : DHCP ---
+    - name: Vérifier si le pool existe
+      cisco.ios.ios_command:
+        commands: "show ip dhcp pool POOL_LAN_ENTREPRISE"
+      register: pool_check
+      failed_when: false
+
+    - name: Suppression de l'ancien pool DHCP
+      cisco.ios.ios_config:
+        lines:
+          - no ip dhcp pool POOL_LAN_ENTREPRISE
+      when: "'Pool POOL_LAN_ENTREPRISE' in pool_check.stdout[0]"
+
+    - name: Création du nouveau pool DHCP
+      cisco.ios.ios_config:
+        lines:
+          - network 192.168.2.0 255.255.255.0
+          - default-router 192.168.2.1
+          - dns-server 8.8.8.8
+        parents: ip dhcp pool POOL_LAN_ENTREPRISE
