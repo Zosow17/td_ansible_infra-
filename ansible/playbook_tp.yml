@@ -89,3 +89,12 @@
           - access-list 10 permit 192.168.3.0 0.0.0.255
           - access-list 10 permit 192.168.4.0 0.0.0.255
           - ip nat inside source list 10 interface GigabitEthernet1 overload
+
+    # --- PARTIE 4 : NAT Statique (Port Forwarding / PAT) ---
+    - name: Configuration du Port Forwarding (Web et SSH)
+      cisco.ios.ios_config:
+        lines:
+          - "ip nat inside source static tcp {{ item.local_ip }} {{ item.local_port }} interface GigabitEthernet1 {{ item.ext_port }}"
+      loop:
+        - { local_ip: '192.168.3.2', local_port: '80',   ext_port: '80'   } # Serveur Web
+        - { local_ip: '192.168.4.2', local_port: '22',   ext_port: '2222' } # Serveur SSH

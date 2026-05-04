@@ -25,3 +25,4 @@
         content: " {{ config.stdout[0] }}"
         # Nom du fichier, le terme entre accolade est une variable
         dest: "show_run_{{ inventory_hostname }}.txt"
+

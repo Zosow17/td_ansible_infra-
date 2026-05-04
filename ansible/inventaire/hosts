@@ -1,5 +1,4 @@
 [routeurs]
-csr1 ansible_host=161.3.60.219
-
+csr1 ansible_host=172.20.10.4
 [voisin]
-csr2 ansible_host=161.3.36.220
+csr2 ansible_host=161.3.48.163
