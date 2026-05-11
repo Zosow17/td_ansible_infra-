@@ -1,2 +1,9 @@
 [routeurs]
-csr1 ansible_host=172.20.10.4
+csr1 ansible_host=192.168.4.1
+
+[serveurs]
+ansible ansible_host=127.0.0.1
+web     ansible_host=192.168.3.2
+
+[serveurs:vars]
+ansible_connection=ssh
