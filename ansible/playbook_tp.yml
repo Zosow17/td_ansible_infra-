@@ -42,7 +42,6 @@
             description: LAN_ADMIN
             enabled: true
         state: merged
-
     # --- PARTIE 2 : DHCP ---
     - name: Vérifier si le pool existe
       cisco.ios.ios_command:
@@ -55,6 +54,7 @@
         lines:
           - no ip dhcp pool POOL_LAN_ENTREPRISE
       when: "'Pool POOL_LAN_ENTREPRISE' in pool_check.stdout[0]"
+      #N'exécute cette tâche que si le texte "Pool POOL_LAN_ENTREPRISE" a été trouvé dans le résultat de la commande précédente.
 
     - name: Création du nouveau pool DHCP
       cisco.ios.ios_config:
@@ -82,15 +82,20 @@
         - GigabitEthernet3
         - GigabitEthernet4
 
-    - name: Configuration de l'ACL et du NAT global
+    - name: Configuration des lignes de l'ACL 10 (Autoriser les réseaux)
       cisco.ios.ios_config:
         lines:
-          - access-list 10 permit 192.168.2.0 0.0.0.255
-          - access-list 10 permit 192.168.3.0 0.0.0.255
-          - access-list 10 permit 192.168.4.0 0.0.0.255
-          - ip nat inside source list 10 interface GigabitEthernet1 overload
+          - "access-list 10 permit {{ item }} 0.0.0.255"
+      loop:
+        - 192.168.2.0
+        - 192.168.3.0
+        - 192.168.4.0
 
-    # --- PARTIE 4 : NAT Statique (Port Forwarding / PAT) ---
+    - name: Liaison de l'ACL au NAT global (Overload / PAT)
+      cisco.ios.ios_config:
+        lines:
+          - ip nat inside source list 10 interface GigabitEthernet1 overload
+     # --- PARTIE 4 : NAT Statique (Port Forwarding / PAT) ---
     - name: Configuration du Port Forwarding (Web et SSH)
       cisco.ios.ios_config:
         lines:
