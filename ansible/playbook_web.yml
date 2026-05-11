@@ -1,0 +1,29 @@
+---
+- name: Installation et configuration du serveur Web Apache
+  hosts: web
+  gather_facts: yes
+  become: yes  # Utilise sudo pour toutes les tâches
+
+  tasks:
+    - name: Mise à jour du cache apt (apt update)
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Installation du paquet apache2
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+
+    - name: Copie du répertoire du site web
+      ansible.builtin.copy:
+        src: files/site_web/
+        dest: /var/www/html/
+        owner: www-data
+        group: www-data
+        mode: '0600'
+
+    - name: Redémarrage et activation du service Apache
+      ansible.builtin.service:
+        name: apache2
+        enabled: yes
+        state: restarted
