@@ -1,34 +1,49 @@
 #!/usr/bin/env python3
-# Indique l'outil à utiliser pour lancer ce script
-# Importe l'objet permettant de faire une connection ssh avec netmiko
 from netmiko import ConnectHandler
-# Gestion des expression régulières
 import re
-# Dictionnaire avec paramètres pour se connecter à notre serveur web
+
 serv_web = {
-'device_type' : 'linux',
-'ip' : '192.168.3.2',
-'username' : 'utilisateur',
-'password' : 'toor',
-'port' : 22,
-'verbose' : True
+    'device_type' : 'linux',
+    'ip' : '192.168.3.2',
+    'username' : 'utilisateur',
+    'password' : 'toor',
+    'port' : 22,
+    'verbose' : False # Mis à False pour un affichage plus propre, mets True pour débugger
 }
-# Réalise la connection ssh avec le serveur Linux
+
+# 1. Connexion
 connection = ConnectHandler(**serv_web)
-# Envoi la commande ping pour tester si on peut joindre le 8.8.8.8 depuis le serveur web
-test = connection.send_command('ping -c 4 -W 1 8.8.8.8')
-# Affiche le résultat du test
-print(">>> Serv_Web : Test de connectivité serveur Linux vers extérieur (dns google)")
-print(test)
-# Exemple de résultat :
-# 4 packets transmitted, 4 received, 0% packet loss, time 3005ms
-# Recherche en capturant les éléments entre parenthèse sous la forme
-# (chiffres_répétés) lettre_répété lettre_répeté, ...
-capture=re.search(r'(\d+) \w+ \w+, (\d+) \w+, (\d+)% \w+ \w+, time (\d+)ms',test)
-# Les éléments sont stocké dans capture.group(1), capture.group(2) ...
-# capture.group (1) correspond au paquets transmis et capture.groupe(2) au reçu
-if capture.group(1)==capture.group(2):
-    print("+++ Test réalisé avec succès")
+
+# 2. Test de connectivité (PING)
+print(">>> Serv_Web : Test de connectivité vers 8.8.8.8")
+test_ping = connection.send_command('ping -c 4 -W 1 8.8.8.8')
+print(test_ping)
+
+capture_ping = re.search(r'(\d+) \w+ \w+, (\d+) \w+, (\d+)% \w+ \w+, time (\d+)ms', test_ping)
+
+if capture_ping and capture_ping.group(1) == capture_ping.group(2):
+    print("+++ Ping réalisé avec succès")
 else:
-    print("xxx Problème de connectivité")
+    print("xxx Problème de connectivité IP")
+    connection.disconnect()
     exit(-1)
+
+# 3. Test de résolution DNS (NSLOOKUP)
+print("\n>>> Serv_Web : Test de résolution DNS (www.google.fr)")
+test_dns = connection.send_command('nslookup -timeout=1 www.google.fr')
+print(test_dns)
+
+# On cherche "Server:" suivi d'espaces/tabs et de l'IP
+capture_dns = re.search(r'Server:\s+(\d+\.\d+\.\d+\.\d+)', test_dns)
+
+if capture_dns:
+    dns_ip = capture_dns.group(1)
+    print(f"+++ Résolution DNS fonctionnelle via le serveur : {dns_ip}")
+else:
+    print("xxx Erreur : Impossible de résoudre le nom de domaine")
+    connection.disconnect()
+    exit(-2)
+
+# 4. Fermeture propre
+connection.disconnect()
+print("\n--- Tous les tests sont validés ---")
