@@ -43,7 +43,21 @@ else:
     print("xxx Erreur : Impossible de résoudre le nom de domaine")
     connection.disconnect()
     exit(-2)
+    
+# --- Nouveau Test : Serveur Web Local ---
 
+print("\n>>> Serv_Web : Test du serveur Web en local (wget)")
+# On tente de télécharger l'index
+test_web = connection.send_command('wget --timeout 1 -t 1 127.0.0.1')
+print(test_web)
+
+# On vérifie si la réponse contient "index.html" sauvegardé ou "200 OK"
+if "index.html" in test_web or "200 OK" in test_web:
+    print("+++ Serveur Web local fonctionnel (index.html accessible)")
+else:
+    print("xxx Erreur : Le serveur Web ne répond pas en local")
+    connection.disconnect()
+    exit(-3)
 # 4. Fermeture propre
 connection.disconnect()
 print("\n--- Tous les tests sont validés ---")
